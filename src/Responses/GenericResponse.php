@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Shamarkellman\PowerTranz\Responses;
 
 class GenericResponse extends AbstractResponse
 {
     public function isSuccessful(): bool
     {
-        return intval($this->transactionData->IsoResponseCode) === 1;
+        return $this->transactionData->IsoResponseCode === '00';
     }
 }

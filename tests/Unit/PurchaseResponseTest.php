@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Shamarkellman\PowerTranz\Responses\PurchaseResponse;
 
 test('PurchaseResponse can be constructed and returns data', function () {

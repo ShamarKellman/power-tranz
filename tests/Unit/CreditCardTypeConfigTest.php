@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Shamarkellman\PowerTranz\Support\CreditCardTypeConfig;
 
 test('can construct and get properties', function () {
@@ -34,4 +36,4 @@ test('matches returns true for valid card number', function () {
     ];
     $ccType = new CreditCardTypeConfig($config);
     expect($ccType->matches('4111111111111111'))->toBeTrue();
-}); 
+});

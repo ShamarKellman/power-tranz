@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Shamarkellman\PowerTranz\Responses;
 
 class PurchaseResponse extends AbstractResponse

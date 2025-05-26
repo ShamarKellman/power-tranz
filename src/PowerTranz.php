@@ -1,13 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Shamarkellman\PowerTranz;
 
 use Exception;
-use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use Ramsey\Uuid\Uuid;
 use Shamarkellman\PowerTranz\Contracts\PowerTranzInterface;
+use Shamarkellman\PowerTranz\Data\AuthorizationData;
+use Shamarkellman\PowerTranz\Data\CaptureRefundData;
+use Shamarkellman\PowerTranz\Data\TransactionData;
 use Shamarkellman\PowerTranz\Exceptions\GatewayException;
 use Shamarkellman\PowerTranz\Exceptions\InvalidCreditCard;
 use Shamarkellman\PowerTranz\Responses\Authorize3DSResponse;
@@ -45,6 +50,8 @@ class PowerTranz implements PowerTranzInterface
     private bool $transactionNumberSet = false;
 
     private ?string $orderNumberPrefix = null;
+
+    public function __construct(private ClientInterface $client) {}
 
     public function getName(): string
     {
@@ -212,23 +219,23 @@ class PowerTranz implements PowerTranzInterface
      * @throws InvalidCreditCard
      * @throws GatewayException
      */
-    public function authorize(array $transactionData): Authorize3DSResponse
+    public function authorize(AuthorizationData $transactionData): Authorize3DSResponse
     {
-        $this->validateCreditCard($transactionData);
+        $this->validateCreditCard($transactionData->toArray());
 
         $this->setData($transactionData);
 
-        $expiry = sprintf('%02d%02d', (strlen($transactionData['card']['expiryYear']) == 4) ? substr($transactionData['card']['expiryYear'], 2, 2) : $transactionData['card']['expiryYear'], $transactionData['card']['expiryMonth']);
-        $holder = $transactionData['card']['name'] ?? sprintf('%s %s', $transactionData['card']['firstName'], $transactionData['card']['lastName']);
+        $expiry = sprintf('%02d%02d', (strlen($transactionData->card->expiryYear) == 4) ? substr($transactionData->card->expiryYear, 2, 2) : $transactionData->card->expiryYear, $transactionData->card->expiryMonth);
+        $holder = $transactionData->card->name ?? sprintf('%s %s', $transactionData->card->firstName, $transactionData->card->lastName);
 
         $this->transactionData['Source'] = [
-            'CardPan' => Support\CreditCard::number($transactionData['card']['number']),
-            'CardCvv' => $transactionData['card']['cvv'],
+            'CardPan' => Support\CreditCard::number($transactionData->card->number),
+            'CardCvv' => $transactionData->card->cvv,
             'CardExpiration' => $expiry,
             'CardholderName' => $holder,
         ];
 
-        $response = $this->send($this->transactionData, 'spi/auth');
+        $response = $this->send($this->transactionData, 'authorize');
 
         return new Authorize3DSResponse($response);
     }
@@ -238,18 +245,18 @@ class PowerTranz implements PowerTranzInterface
      *
      * @throws GatewayException
      */
-    public function authorizeWithToken(array $transactionData): Authorize3DSResponse
+    public function authorizeWithToken(AuthorizationData $transactionData): Authorize3DSResponse
     {
         $this->setData($transactionData);
 
-        $expiry = sprintf('%02d%02d', (strlen($transactionData['card']['expiryYear']) == 4) ? substr($transactionData['card']['expiryYear'], 2, 2) : $transactionData['card']['expiryYear'], $transactionData['card']['expiryMonth']);
-        $holder = $transactionData['card']['name'] ?? sprintf('%s %s', $transactionData['card']['firstName'], $transactionData['card']['lastName']);
+        $expiry = sprintf('%02d%02d', (strlen($transactionData->card->expiryYear) == 4) ? substr($transactionData->card->expiryYear, 2, 2) : $transactionData->card->expiryYear, $transactionData->card->expiryMonth);
+        $holder = $transactionData->card->name ?? sprintf('%s %s', $transactionData->card->firstName, $transactionData->card->lastName);
 
         $this->transactionData['Tokenize'] = true;
 
         $this->transactionData['Source'] = [
-            'Token' => $transactionData['card']['number'],
-            'CardCvv' => $transactionData['card']['cvv'],
+            'Token' => $transactionData->card->number,
+            'CardCvv' => $transactionData->card->cvv,
             'CardExpiration' => $expiry,
             'CardholderName' => $holder,
         ];
@@ -261,21 +268,22 @@ class PowerTranz implements PowerTranzInterface
 
     /**
      * Authorization Request using Sentry Token
+     *
      * @throws GatewayException
      */
-    public function authorizeWithSentryToken(array $transactionData): Authorize3DSResponse
+    public function authorizeWithSentryToken(AuthorizationData $transactionData): Authorize3DSResponse
     {
         $this->setData($transactionData);
 
-        $expiry = sprintf('%02d%02d', (strlen($transactionData['card']['expiryYear']) == 4) ? substr($transactionData['card']['expiryYear'], 2, 2) : $transactionData['card']['expiryYear'], $transactionData['card']['expiryMonth']);
-        $holder = $transactionData['card']['name'] ?? sprintf('%s %s', $transactionData['card']['firstName'], $transactionData['card']['LastName']);
+        $expiry = sprintf('%02d%02d', (strlen($transactionData->card->expiryYear) == 4) ? substr($transactionData->card->expiryYear, 2, 2) : $transactionData->card->expiryYear, $transactionData->card->expiryMonth);
+        $holder = $transactionData->card->name ?? sprintf('%s %s', $transactionData->card->firstName, $transactionData->card->lastName);
 
         $this->transactionData['Tokenize'] = true;
 
         $this->transactionData['Source'] = [
-            'Token' => $transactionData['card']['number'],
+            'Token' => $transactionData->card->number,
             'TokenType' => 'PG2',
-            'CardCvv' => $transactionData['card']['cvv'],
+            'CardCvv' => $transactionData->card->cvv,
             'CardExpiration' => $expiry,
             'CardholderName' => $holder,
         ];
@@ -288,7 +296,7 @@ class PowerTranz implements PowerTranzInterface
     /**
      * Get Hosted Page
      */
-    public function getHostedPage(array $transactionData, string $pageSet, string $pageName): HostedPageResponse
+    public function getHostedPage(AuthorizationData $transactionData, string $pageSet, string $pageName): HostedPageResponse
     {
         $this->setData($transactionData);
 
@@ -297,7 +305,7 @@ class PowerTranz implements PowerTranzInterface
             'PageName' => $pageName,
         ];
 
-        $response = $this->send($this->transactionData, 'spi/auth');
+        $response = $this->send($this->transactionData, 'hosted');
 
         return new HostedPageResponse($response);
     }
@@ -324,20 +332,20 @@ class PowerTranz implements PowerTranzInterface
      *
      * @throws InvalidCreditCard
      */
-    public function tokenize(array $transactionData): GenericResponse
+    public function tokenize(AuthorizationData $transactionData): GenericResponse
     {
-        $this->validateCreditCard($transactionData);
+        $this->validateCreditCard($transactionData->toArray());
 
-        $expiry = sprintf('%02d%02d', (strlen($transactionData['card']['expiryYear']) == 4) ? substr($transactionData['card']['expiryYear'], 2, 2) : $transactionData['card']['expiryYear'], $transactionData['card']['expiryMonth']);
-        $holder = $transactionData['card']['name'] ?? sprintf('%s %s', $transactionData['card']['firstName'], $transactionData['card']['LastName']);
+        $expiry = sprintf('%02d%02d', (strlen($transactionData->card->expiryYear) == 4) ? substr($transactionData->card->expiryYear, 2, 2) : $transactionData->card->expiryYear, $transactionData->card->expiryMonth);
+        $holder = $transactionData->card->name ?? sprintf('%s %s', $transactionData->card->firstName, $transactionData->card->lastName);
 
         $this->setData($transactionData);
 
         $this->transactionData['Tokenize'] = true;
         $this->transactionData['ThreeDSecure'] = false;
         $this->transactionData['Source'] = [
-            'CardPan' => Support\CreditCard::number($transactionData['card']['number']),
-            'CardCvv' => $transactionData['card']['cvv'],
+            'CardPan' => Support\CreditCard::number($transactionData->card->number),
+            'CardCvv' => $transactionData->card->cvv,
             'CardExpiration' => $expiry,
             'CardholderName' => $holder,
         ];
@@ -368,11 +376,11 @@ class PowerTranz implements PowerTranzInterface
     /**
      * Capture a specific amount of a transaction
      */
-    public function capture(array $transactionData): GenericResponse
+    public function capture(CaptureRefundData $transactionData): GenericResponse
     {
         $this->transactionData = [
-            'TransactionIdentifier' => $transactionData['transactionNumber'],
-            'TotalAmount' => $transactionData['amount'] ?? 0,
+            'TransactionIdentifier' => $transactionData->transactionNumber,
+            'TotalAmount' => $transactionData->amount,
         ];
 
         $response = $this->send($this->transactionData, 'capture');
@@ -383,12 +391,12 @@ class PowerTranz implements PowerTranzInterface
     /**
      * Refund Transaction
      */
-    public function refund(array $transactionData): GenericResponse
+    public function refund(CaptureRefundData $transactionData): GenericResponse
     {
         $this->transactionData = [
-            'TransactionIdentifier' => $transactionData['transactionNumber'],
+            'TransactionIdentifier' => $transactionData->transactionNumber,
             'Refund' => true,
-            'TotalAmount' => $transactionData['amount'] ?? 0,
+            'TotalAmount' => $transactionData->amount,
         ];
 
         $response = $this->send($this->transactionData, 'refund');
@@ -428,28 +436,16 @@ class PowerTranz implements PowerTranzInterface
     /**
      * Set transactionData variable
      */
-    private function setData(array $data): void
+    private function setData(TransactionData $data): void
     {
         $this->transactionData = [
             'TransactionIdentifier' => $this->getTransactionNumber(),
-            'TotalAmount' => $data['amount'] ?? 0,
-            'CurrencyCode' => Support\IsoCodes::getCurrencyCode($data['currency']) ?? Support\Constants::CONFIG_CURRENCY_CODE,
+            'TotalAmount' => $data->amount,
+            'CurrencyCode' => Support\IsoCodes::getCurrencyCode($data->currency) ?? Support\Constants::CONFIG_CURRENCY_CODE,
             'ThreeDSecure' => $this->use3DS,
             'FraudCheck' => $this->checkFraud,
             'OrderIdentifier' => $this->getOrderNumber(),
-            'BillingAddress' => [
-                'FirstName' => $data['card']['firstName'] ?? '',
-                'LastName' => $data['card']['lastName'] ?? '',
-                'Line1' => $data['card']['Address1'] ?? '',
-                'Line2' => $data['card']['Address2'] ?? '',
-                'City' => $data['card']['City'] ?? '',
-                'State' => $data['card']['State'] ?? '',
-                'PostalCode' => $data['card']['Postcode'] ?? '',
-                'CountryCode' => Support\IsoCodes::getCountryCode($data['card']['Country']) ?? Support\Constants::CONFIG_COUNTRY_CODE,
-                'EmailAddress' => $data['card']['email'] ?? '',
-                'PhoneNumber' => $data['card']['Phone'] ?? '',
-            ],
-            'AddressMatch' => $data['AddressMatch'] ?? false,
+            'AddressMatch' => $data->addressMatch,
             'ExtendedData' => [
                 'ThreeDSecure' => [
                     'ChallengeWindowSize' => 4,
@@ -458,6 +454,21 @@ class PowerTranz implements PowerTranzInterface
                 'MerchantResponseUrl' => $this->getMerchantResponseURL(),
             ],
         ];
+
+        if ($data instanceof AuthorizationData) {
+            $this->transactionData['BillingAddress'] = [
+                'FirstName' => $data->card->firstName ?? '',
+                'LastName' => $data->card->lastName ?? '',
+                'Line1' => $data->card->address1 ?? '',
+                'Line2' => $data->card->address2 ?? '',
+                'City' => $data->card->city ?? '',
+                'State' => $data->card->state ?? '',
+                'PostalCode' => $data->card->postcode ?? '',
+                'CountryCode' => Support\IsoCodes::getCountryCode($data->card->country) ?? Support\Constants::CONFIG_COUNTRY_CODE,
+                'EmailAddress' => $data->card->email ?? '',
+                'PhoneNumber' => $data->card->phone ?? '',
+            ];
+        }
     }
 
     /**
@@ -471,12 +482,6 @@ class PowerTranz implements PowerTranzInterface
 
         // add API Segment iff necessary
         $url = "{$this->getEndpoint()}{$api}";
-
-        // Create Guzzle client with default options
-        $client = new Client([
-            'timeout' => 150,
-            'verify' => false,
-        ]);
 
         // Prepare headers
         $headers = [
@@ -499,7 +504,7 @@ class PowerTranz implements PowerTranzInterface
 
         try {
             // Execute the request
-            $response = $client->request($method, $url, $options);
+            $response = $this->client->request($method, $url, $options);
 
             // Get the response body
             $result = $response->getBody()->getContents();

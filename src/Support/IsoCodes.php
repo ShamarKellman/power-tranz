@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Shamarkellman\PowerTranz\Support;
 
 class IsoCodes
 {
-    const ISO_COUNTRY_CODES = [
+    public const ISO_COUNTRY_CODES = [
         ['Afghanistan', '004', 'AF', 'AFG'],
         ['Aland Islands', '248', 'AX', 'ALA'],
         ['Albania', '008', 'AL', 'ALB'],
@@ -260,7 +262,7 @@ class IsoCodes
         ['Zimbabwe', '716', 'ZW', 'ZWE'],
     ];
 
-    const ISO_CURRENCY_CODES = [
+    public const ISO_CURRENCY_CODES = [
         ['Afghani', '971', 'AFN', '2', 'Afghani', 'Pul'],
         ['Albanian Lek', '8', 'ALL', '2', 'Lekë', 'Qindarka'],
         ['Algerian Dinar', '12', 'DZD', '2', 'Algerian Dinars', 'Santīm'],

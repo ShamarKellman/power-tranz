@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Shamarkellman\PowerTranz\Contracts;
 
+use Shamarkellman\PowerTranz\Data\AuthorizationData;
+use Shamarkellman\PowerTranz\Data\CaptureRefundData;
 use Shamarkellman\PowerTranz\Responses\Authorize3DSResponse;
 use Shamarkellman\PowerTranz\Responses\GenericResponse;
 use Shamarkellman\PowerTranz\Responses\HostedPageResponse;
@@ -10,23 +14,23 @@ use Shamarkellman\PowerTranz\Responses\ThreeDSResponse;
 
 interface PowerTranzInterface
 {
-    public function authorize(array $transactionData): Authorize3DSResponse;
+    public function authorize(AuthorizationData $transactionData): Authorize3DSResponse;
 
-    public function authorizeWithToken(array $transactionData): Authorize3DSResponse;
+    public function authorizeWithToken(AuthorizationData $transactionData): Authorize3DSResponse;
 
-    public function authorizeWithSentryToken(array $transactionData): Authorize3DSResponse;
+    public function authorizeWithSentryToken(AuthorizationData $transactionData): Authorize3DSResponse;
 
-    public function getHostedPage(array $transactionData, string $pageSet, string $pageName): HostedPageResponse;
+    public function getHostedPage(AuthorizationData $transactionData, string $pageSet, string $pageName): HostedPageResponse;
 
     public function acceptNotification(array $data): ThreeDSResponse;
 
     public function purchase(string $spitoken): PurchaseResponse;
 
-    public function tokenize(array $transactionData): GenericResponse;
+    public function tokenize(AuthorizationData $transactionData): GenericResponse;
 
     public function void(string $transactionNumber): GenericResponse;
 
-    public function capture(array $transactionData): GenericResponse;
+    public function capture(CaptureRefundData $transactionData): GenericResponse;
 
-    public function refund(array $transactionData): GenericResponse;
+    public function refund(CaptureRefundData $transactionData): GenericResponse;
 }

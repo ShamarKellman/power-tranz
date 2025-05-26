@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Shamarkellman\PowerTranz\Exceptions\InvalidResponseData;
 
 test('InvalidResponseData can be thrown and caught', function () {
@@ -8,4 +10,4 @@ test('InvalidResponseData can be thrown and caught', function () {
     } catch (InvalidResponseData $e) {
         expect($e->getMessage())->toBe('Invalid response');
     }
-}); 
+});

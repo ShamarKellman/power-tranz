@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Shamarkellman\PowerTranz\Exceptions\InvalidEmailAddress;
 
 test('InvalidEmailAddress can be thrown and caught', function () {
@@ -8,4 +10,4 @@ test('InvalidEmailAddress can be thrown and caught', function () {
     } catch (InvalidEmailAddress $e) {
         expect($e->getMessage())->toBe('Invalid email');
     }
-}); 
+});

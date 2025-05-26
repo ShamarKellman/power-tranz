@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Shamarkellman\PowerTranz\Exceptions\InvalidCreditCard;
 
 test('InvalidCreditCard can be thrown and caught', function () {
@@ -8,4 +10,4 @@ test('InvalidCreditCard can be thrown and caught', function () {
     } catch (InvalidCreditCard $e) {
         expect($e->getMessage())->toBe('Invalid card');
     }
-}); 
+});

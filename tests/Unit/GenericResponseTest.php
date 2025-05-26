@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Shamarkellman\PowerTranz\Responses\GenericResponse;
 
 test('GenericResponse can be constructed and returns data', function () {

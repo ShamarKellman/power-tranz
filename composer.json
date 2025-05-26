@@ -2,7 +2,11 @@
     "name": "shamarkellman/power_tranz",
     "autoload": {
         "psr-4": {
-            "Shamarkellman\\PowerTranz\\": "src/",
+            "Shamarkellman\\PowerTranz\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
             "Shamarkellman\\PowerTranz\\Tests\\": "tests/"
         }
     },

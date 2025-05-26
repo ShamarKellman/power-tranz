@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Shamarkellman\PowerTranz\Responses;
 
 abstract class AbstractResponse
@@ -43,7 +45,7 @@ abstract class AbstractResponse
     /**
      * Get Error Message
      *
-     * @return array{code: string, message: string}
+     * @return list<array{code: string, message: string}>
      */
     public function getErrorMessages(): array
     {

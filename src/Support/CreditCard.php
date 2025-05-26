@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Shamarkellman\PowerTranz\Support;
 
 class CreditCard
@@ -31,10 +33,10 @@ class CreditCard
         for ($i = $cc_length - 5; $i >= 0; $i--) {
             // If on the fourth character add a dash
             if ((($i + 1) - $cc_length) % 4 == 0) {
-                $newCreditCard = '-'.$newCreditCard;
+                $newCreditCard = '-' . $newCreditCard;
             }
             // Add the current character to the new credit card
-            $newCreditCard = $cc[$i].$newCreditCard;
+            $newCreditCard = $cc[$i] . $newCreditCard;
         }
 
         // Return the formatted credit card number

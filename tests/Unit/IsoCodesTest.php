@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Shamarkellman\PowerTranz\Support\IsoCodes;
 
 test('getCountryCode returns correct code for country name', function () {
@@ -12,4 +14,4 @@ test('getCountryCode returns correct code for alpha-2', function () {
 
 test('getCurrencyCode returns correct code for currency name', function () {
     expect(IsoCodes::getCurrencyCode('JMD'))->toBe('388');
-}); 
+});

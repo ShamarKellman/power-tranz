@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Shamarkellman\PowerTranz\Support;
 
 use InvalidArgumentException;
@@ -343,7 +345,7 @@ class CreditCardTypeConfig
      */
     protected function getGapsQueue(): SplQueue
     {
-        $queue = new SplQueue;
+        $queue = new SplQueue();
         foreach ($this->getGaps() as $gap) {
             $queue->enqueue($gap);
         }

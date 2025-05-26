@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Shamarkellman\PowerTranz\Support\Constants;
 
 test('constants have expected values', function () {
@@ -9,4 +11,4 @@ test('constants have expected values', function () {
     expect(Constants::CONFIG_KEY_PWTID)->toBe('PWTId');
     expect(Constants::CONFIG_KEY_PWTPWD)->toBe('PWTpwd');
     expect(Constants::CONFIG_KEY_MERCHANT_RESPONSE_URL)->toBe('merchantResponseURL');
-}); 
+});
