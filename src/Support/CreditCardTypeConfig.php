@@ -57,79 +57,58 @@ class CreditCardTypeConfig
      *   [743335, 872344],
      * ];
      * ```
+     *
+     * @var array<int|array<int, int|string>>
      */
     protected array $patterns = [];
 
     /**
-     * An array of integers used to pretty format the card number values by specifying
-     * where are the gaps indexes between the number blocks.
-     *
-     * e.g.:
-     * ```php
-     * $gapsA = [4, 8, 12]; // 4242 4242 4242 4242
-     * $gapsB = [5, 10]; // 72323 12312 12345
-     * ```
+     * @var list<int>
      */
     protected array $gaps = [];
 
     /**
-     * An array of integers or arrays values with two elements specifying a range.
-     *
-     * e.g.:
-     * ```php
-     * $lengths = [
-     *   15,
-     *   [10, 13],
-     *   [17, 20],
-     * ];
-     * ```
+     * @var array<int|array<int, int>>
      */
     protected array $lengths = [];
 
     /**
-     * The configuration of the security code validator (CVV, CVC, CVE, etc.)
-     *
-     * e.g.:
-     * ```php
-     * $code = [
-     *   'name' => 'CVV',
-     *   'size' => 3,
-     * ];
-     * ```
-     *
      * @var array{name: string, size: int}
      */
     protected array $code;
 
-    /**
-     * Specifies if the card number should satisfy the luhn check to match the
-     * configuration.
-     */
     protected bool $luhnCheck = true;
 
+    /**
+     * @param array{
+     *     niceType: string,
+     *     type: string,
+     *     patterns: array<int|array<int, int|string>>,
+     *     gaps: list<int>,
+     *     lengths: array<int|array<int, int>>,
+     *     code: array{name: string, size: int},
+     *     luhnCheck?: bool
+     * } $config
+     *
+     * @throws InvalidArgumentException
+     */
     public function __construct(array $config)
     {
         $this->load($config);
     }
 
-    /**
-     * Gets the nice type of the card type configuration (e.g. "Visa", "Mastercard").
-     */
     public function getNiceType(): string
     {
         return $this->niceType;
     }
 
-    /**
-     * Gets the type of the card type configuration (e.g. "visa", "mastercard").
-     */
     public function getType(): string
     {
         return $this->type;
     }
 
     /**
-     * Gets the patterns that this card type configuration uses to validate a card number.
+     * @return array<int|array<int, int|string>>
      */
     public function getPatterns(): array
     {
@@ -137,7 +116,7 @@ class CreditCardTypeConfig
     }
 
     /**
-     * Gets the gaps used by this configuration to pretty format a card number.
+     * @return list<int>
      */
     public function getGaps(): array
     {
@@ -145,7 +124,7 @@ class CreditCardTypeConfig
     }
 
     /**
-     * Gets the lengths that this card type configuration uses to validate the card numbers.
+     * @return array<int|array<int, int>>
      */
     public function getLengths(): array
     {
@@ -153,8 +132,6 @@ class CreditCardTypeConfig
     }
 
     /**
-     * Gets the security code configuration of the card type.
-     *
      * @return array{name: string, size: int}
      */
     public function getCode(): array
@@ -162,17 +139,11 @@ class CreditCardTypeConfig
         return $this->code;
     }
 
-    /**
-     * Gets the luhn check configuration of this object.
-     */
     public function getLuhnCheck(): bool
     {
         return $this->luhnCheck;
     }
 
-    /**
-     * Sets the luhn check configuration for this object.
-     */
     protected function setLuhnCheck(bool $value): static
     {
         $this->luhnCheck = $value;
@@ -180,9 +151,6 @@ class CreditCardTypeConfig
         return $this;
     }
 
-    /**
-     * Checks if the given card number matches this card type configuration.
-     */
     public function matches(int|string $cardNumber): bool
     {
         if ($this->matchesLengths($cardNumber) === false) {
@@ -196,9 +164,6 @@ class CreditCardTypeConfig
         return $this->matchesPatterns($cardNumber);
     }
 
-    /**
-     * Checks if the card number matches one of the patterns array configuration.
-     */
     public function getMatchingPatternStrength(int|string $cardNumber): int
     {
         $strength = 0;
@@ -214,9 +179,6 @@ class CreditCardTypeConfig
         return $strength;
     }
 
-    /**
-     * Checks if the card number matches one of the patterns array configuration.
-     */
     public function matchesPatterns(int|string $cardNumber): bool
     {
         foreach ($this->getPatterns() as $pattern) {
@@ -228,9 +190,6 @@ class CreditCardTypeConfig
         return false;
     }
 
-    /**
-     * Checks if the card number matches one of the lengths array configuration.
-     */
     public function matchesLengths(string $cardNumber): bool
     {
         foreach ($this->getLengths() as $length) {
@@ -242,9 +201,6 @@ class CreditCardTypeConfig
         return false;
     }
 
-    /**
-     * Checks if the card number satisfies the luhn's algorithm.
-     */
     public function satisfiesLuhn(int|string $cardNumber): bool
     {
         $cardNumber = preg_replace('/\D/', '', (string) $cardNumber); // Remove non-digits
@@ -267,17 +223,11 @@ class CreditCardTypeConfig
         return $sum % 10 === 0;
     }
 
-    /**
-     * Checks whether the security code matches the card type configuration or not.
-     */
     public function matchesSecurityCode(string $securityCode): bool
     {
         return $this->isDigits($securityCode) && $this->code['size'] === strlen($securityCode);
     }
 
-    /**
-     * Formats the card number according to the gap configuration.
-     */
     public function format(int|string $cardNumber): string
     {
         $gaps = $this->getGapsQueue();
@@ -297,34 +247,20 @@ class CreditCardTypeConfig
     }
 
     /**
-     * Loads the card type configuration object.
+     * @param array{
+     *     niceType: string,
+     *     type: string,
+     *     patterns: array<int|array<int, int|string>>,
+     *     gaps: list<int>,
+     *     lengths: array<int|array<int, int>>,
+     *     code: array{name: string, size: int},
+     *     luhnCheck?: bool
+     * } $config
+     *
+     * @throws InvalidArgumentException
      */
     protected function load(array $config): static
     {
-        if (isset($config['niceType']) === false) {
-            throw new InvalidArgumentException('niceType must be provided in the configuration object');
-        }
-
-        if (isset($config['type']) === false) {
-            throw new InvalidArgumentException('type must be provided in the configuration object');
-        }
-
-        if (isset($config['patterns']) === false) {
-            throw new InvalidArgumentException('patterns must be provided in the configuration object');
-        }
-
-        if (isset($config['gaps']) === false) {
-            throw new InvalidArgumentException('gaps must be provided in the configuration object');
-        }
-
-        if (isset($config['lengths']) === false) {
-            throw new InvalidArgumentException('lengths must be provided in the configuration object');
-        }
-
-        if (isset($config['code']) === false) {
-            throw new InvalidArgumentException('code must be provided in the configuration object');
-        }
-
         if (isset($config['luhnCheck']) === false) {
             throw new InvalidArgumentException('luhnCheck must be provided in the configuration object');
         }
@@ -341,7 +277,7 @@ class CreditCardTypeConfig
     }
 
     /**
-     * Gets a queue composed by the gaps array for iteration purposes.
+     * @return SplQueue<int> A queue of gaps.
      */
     protected function getGapsQueue(): SplQueue
     {
@@ -363,9 +299,6 @@ class CreditCardTypeConfig
         return $this;
     }
 
-    /**
-     * Sets the type of the card type configuration.
-     */
     protected function setType(string $value): static
     {
         $this->type = $value;
@@ -374,9 +307,7 @@ class CreditCardTypeConfig
     }
 
     /**
-     * Sets the patterns used by this configuration to validate a card number.
-     *
-     * @return $this For fluent configuration of the object.
+     * @param array<int|array<int, int|string>> $values
      *
      * @throws InvalidArgumentException
      */
@@ -402,8 +333,6 @@ class CreditCardTypeConfig
                 if ($this->isDigits($value) === false) {
                     throw new InvalidArgumentException('Pattern elements should be integers or strings representing integer values');
                 }
-
-                $value = (int) $value;
             }
         }
 
@@ -413,7 +342,7 @@ class CreditCardTypeConfig
     }
 
     /**
-     * Sets the gaps used by this configuration to pretty format a card number.
+     * @param list<int> $values
      *
      * @throws InvalidArgumentException
      */
@@ -431,7 +360,7 @@ class CreditCardTypeConfig
     }
 
     /**
-     * Sets the lengths used by this configuration to validate a card number.
+     * @param array<int|array<int, int>> $values
      *
      * @throws InvalidArgumentException
      */
@@ -447,9 +376,6 @@ class CreditCardTypeConfig
                     throw new InvalidArgumentException('Length range elements should be integers or strings representing integer values');
                 }
 
-                $value[0] = (int) $value[0];
-                $value[1] = (int) $value[1];
-
                 if ($value[0] < 0 || $value[0] > $value[1]) {
                     throw new InvalidArgumentException('Length range min element should be greater than zero and less than max element');
                 }
@@ -458,7 +384,6 @@ class CreditCardTypeConfig
                     throw new InvalidArgumentException('Length elements should be integers or strings representing integer values');
                 }
 
-                $value = (int) $value;
             }
         }
 
@@ -468,20 +393,10 @@ class CreditCardTypeConfig
     }
 
     /**
-     * Sets the code validator configuration to validate a card number.
-     *
-     * @throws InvalidArgumentException
+     * @param array{name: string, size: int} $config
      */
     protected function setCode(array $config): static
     {
-        if (isset($config['name']) === false || is_string($config['name']) === false) {
-            throw new InvalidArgumentException('Code name must be provided in the configuration object and must be a string');
-        }
-
-        if (isset($config['size']) === false || $this->isDigits($config['size']) === false) {
-            throw new InvalidArgumentException('Code size must be provided in the configuration object and must be an integer or a string representing an integer value');
-        }
-
         $config['size'] = (int) $config['size'];
 
         $this->code = $config;
@@ -490,7 +405,7 @@ class CreditCardTypeConfig
     }
 
     /**
-     * Gets the pattern matching strength value.
+     * @param int|string|list<string> $pattern
      */
     protected function getPatternStrength(int|string|array $pattern): int
     {
@@ -502,7 +417,7 @@ class CreditCardTypeConfig
     }
 
     /**
-     * Checks if the card number matches the pattern.
+     * @param int|list<string>|string $pattern
      */
     protected function matchesPattern(int|string $cardNumber, int|array|string $pattern): bool
     {
@@ -513,17 +428,11 @@ class CreditCardTypeConfig
         return $this->matchesSimplePattern($cardNumber, $pattern);
     }
 
-    /**
-     * Checks if the card number matches a simple pattern.
-     */
     protected function matchesSimplePattern(int|string $cardNumber, int|string $pattern): bool
     {
-        return substr($cardNumber, 0, strlen($pattern)) === (string) $pattern;
+        return str_starts_with($cardNumber, (string) $pattern);
     }
 
-    /**
-     * Checks if the card number matches the given pattern range.
-     */
     protected function matchesRange(int|string $cardNumber, int|string $min, int|string $max): bool
     {
         $maxLength = max(strlen($min), strlen($max));
@@ -535,7 +444,7 @@ class CreditCardTypeConfig
     }
 
     /**
-     * Checks if the card number matches the given length configuration.
+     * @param int|string|array<int, int|string> $length
      */
     protected function matchesLength(int|string $cardNumber, int|string|array $length): bool
     {
@@ -546,17 +455,11 @@ class CreditCardTypeConfig
         return $this->matchesSimpleLength($cardNumber, $length);
     }
 
-    /**
-     * Checks if the card number matches the given scalar length.
-     */
     protected function matchesSimpleLength(int|string $cardNumber, int|string $length): bool
     {
         return strlen($cardNumber) === $length;
     }
 
-    /**
-     * Checks if the card number matches a length range.
-     */
     protected function matchesLengthRange(int|string $cardNumber, int $min, int $max): bool
     {
         $cardNumberLength = strlen($cardNumber);
@@ -564,9 +467,6 @@ class CreditCardTypeConfig
         return $min <= $cardNumberLength && $cardNumberLength <= $max;
     }
 
-    /**
-     * Checks if the value is formed by digits or not.
-     */
     protected function isDigits(int|string $value): bool
     {
         return (bool) preg_match('/^[0-9]+$/', (string) $value);

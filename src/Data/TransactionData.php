@@ -14,6 +14,9 @@ class TransactionData
         public ?string $orderNumber = null,
     ) {}
 
+    /**
+     * @return array<string, float|bool|string|null>
+     */
     public function toArray(): array
     {
         return [

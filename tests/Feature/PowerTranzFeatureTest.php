@@ -14,6 +14,7 @@ use Shamarkellman\PowerTranz\PowerTranz;
 use Shamarkellman\PowerTranz\Responses\Authorize3DSResponse;
 use Shamarkellman\PowerTranz\Responses\GenericResponse;
 use Shamarkellman\PowerTranz\Responses\HostedPageResponse;
+use Shamarkellman\PowerTranz\Support\CreditCardValidator;
 
 beforeEach(function () {
     $this->container = [];
@@ -52,6 +53,7 @@ test('authorize method returns expected response with valid credit card data', f
         'USD',
         false,
         orderNumber: 'test_order_123',
+        validCardTypes: [CreditCardValidator::TYPE_VISA],
     );
 
     $response = $powerTranz->authorize($data);
@@ -203,7 +205,6 @@ test('capture with invalid transaction number returns error response', function 
     expect($request->getMethod())->toBe('POST')
         ->and($request->getUri()->getPath())->toContain('capture');
 })->skip('flaky test, needs investigation');
-;
 
 test('refund with invalid transaction number returns error response', function () {
     $this->mock->append(new Response(200, [], json_encode([
@@ -235,3 +236,25 @@ test('refund with invalid transaction number returns error response', function (
     expect($request->getMethod())->toBe('POST')
         ->and($request->getUri()->getPath())->toContain('refund');
 })->skip('flaky test, needs investigation');
+
+test('alive endpoint returns AliveResponse with success', function () {
+    $this->mock->append(new Response(200, [], json_encode([
+        'Name' => 'PowerTranz',
+        'Version' => '2.8',
+        'Status' => 'OK',
+    ])));
+
+    $powerTranz = new PowerTranz($this->client);
+    $powerTranz->enableTestMode();
+    $powerTranz->setPowerTranzId('test-id');
+    $powerTranz->setPowerTranzPassword('test-password');
+
+    $response = $powerTranz->alive();
+
+    expect($response)->toBeInstanceOf(\Shamarkellman\PowerTranz\Responses\AliveResponse::class)
+        ->and($response->isSuccessful())->toBeTrue();
+
+    $request = $this->container[0]['request'];
+    expect($request->getMethod())->toBe('GET')
+        ->and($request->getUri()->getPath())->toContain('alive');
+});

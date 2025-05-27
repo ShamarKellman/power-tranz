@@ -11,7 +11,10 @@ class PurchaseResponse extends AbstractResponse
         return boolval($this->transactionData->Approved) == true && intval($this->transactionData->IsoResponseCode) === 0;
     }
 
-    public function getDataArray($amount = null): array
+    /**
+     * @return array<string, mixed>
+     */
+    public function getDataArray(null|string|float $amount = null): array
     {
         return [
             'transactionNumber' => $this->transactionData->TransactionIdentifier,

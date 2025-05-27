@@ -1,7 +1,15 @@
 includes:
-    - vendor/pestphp/pest/extension.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon  # For PHPUnit assertions
 
 parameters:
-	level: 6
-	paths:
-		- src
+    level: 6  # Adjust to your preferred level
+    paths:
+        - src
+        - tests
+    bootstrapFiles:
+        - vendor/autoload.php  # Autoloading support
+    excludePaths:
+        - tests/Pest.php       # Ignore Pest's helper file (optional)
+    universalObjectCratesClasses:
+        - Pest\Expectation     # Allow Pest's expectation API
+        - PHPUnit\Framework\TestCase  # For `$this` in tests

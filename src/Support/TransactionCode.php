@@ -53,13 +53,22 @@ class TransactionCode
 
     protected int $code = 0;
 
+    /**
+     * @var list<int>
+     */
     protected array $userCodes = [];
 
+    /**
+     * @param array<int> $codes
+     */
     public function __construct(array $codes)
     {
         $this->appendCodes($codes);
     }
 
+    /**
+     * @return list<int>
+     */
     public function getUserCodes(): array
     {
         return $this->userCodes;
@@ -70,12 +79,12 @@ class TransactionCode
         return $this->__toString();
     }
 
-    public function addCode($code): static
+    public function addCode(int $code): static
     {
         return $this->appendCodes([$code]);
     }
 
-    public function hasCode($code): bool
+    public function hasCode(int $code): bool
     {
         if (in_array($code, $this->userCodes)) {
             return true;
@@ -84,12 +93,15 @@ class TransactionCode
         return false;
     }
 
+    /**
+     * @param list<int> $codes
+     */
     protected function appendCodes(array $codes): static
     {
         foreach ($codes as $code) {
-            if (in_array($code, $this->codeList) && ! in_array(intval($code), $this->userCodes)) {
-                $this->code += intval($code);
-                $this->userCodes[] = intval($code);
+            if (in_array($code, $this->codeList) && ! in_array($code, $this->userCodes)) {
+                $this->code += $code;
+                $this->userCodes[] = $code;
             }
         }
 

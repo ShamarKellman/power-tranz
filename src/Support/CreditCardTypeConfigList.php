@@ -4,48 +4,21 @@ declare(strict_types=1);
 
 namespace Shamarkellman\PowerTranz\Support;
 
-/**
- * Class CreditCardTypeConfigList.
- *
- * Stores the package credit cards configuration array in an static method.
- *
- * This configuration is base on the Braintree credit card type javascript
- * package.
- *
- * Here are some tips to understand the card configuration.
- * ```php
- *  [
- *      'test-card' => [
- *          'niceType' => 'Test Card',    // Display name
- *          'type' => 'test-card',        // Type/Code name
- *          'patterns' => [               // Valid patterns for the card
- *              272012,                   // Simple validator: true if the card begins with the pattern 272012
- *              [5, 89],                  // Range validator: true if the card initial two digits value is between 5 and 89 both included
- *          ],
- *          'gaps' => [4, 10],            // Values where to put white spaces on pretty card formatting. In this example: XXXX XXXXXX XXXXXX
- *          'lengths' => [                // Valid lengths for the card
- *              15,                       // Simple validator: True if length is exactly 15
- *              [17, 19],                 // Range validator: True if length is between 17 and 19 both included
- *          ],
- *          'code' => [                   // Security code configuration
- *              'name' => 'CVV',          // Name of the security code
- *              'size' => 3,              // Valid length of the security code
- *          ],
- *          'luhnCheck' => true           // To validate the Luhn's algorithm when calling "matches" method
- *      ],
- *  ];
- * ```
- *
- * @see https://github.com/braintree/credit-card-type/blob/master/src/lib/card-types.ts
- *
- * @author José Lorente <jose.lorente.martin@gmail.com>
- */
 class CreditCardTypeConfigList
 {
     /**
-     * Gets the credit card configuration objects.
-     *
-     * @return array[]
+     * @return array<string, array{
+     *     niceType: string,
+     *     type: string,
+     *     patterns: array<int|array<int, int>>,
+     *     gaps: array<int>,
+     *     lengths: array<int|array<int, int>>,
+     *     code: array{
+     *     name: string,
+     *     size: int
+     *   },
+     *   luhnCheck: bool
+     * }>
      */
     public static function get(): array
     {

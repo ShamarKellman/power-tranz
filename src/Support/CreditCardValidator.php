@@ -8,30 +8,6 @@ use BadMethodCallException;
 use InvalidArgumentException;
 
 /**
- * Class CreditCardValidator.
- *
- * CreditCard package is used to validate, format and obtain information about
- * a credit card number.
- *
- * Configuration of the credit cards can be found in CreditCardTypes class. Feel
- * free to contribute adding new credit card configurations.
- *
- * You can define the allowed card types on class instantiation by providing an
- * array with the values of the class constants. If you do not provide the
- * array, all the card types of the package will be used to validate card
- * numbers.
- *
- * The most useful methods of the class are isValid($cardNumber) to check the
- * validity of a card number, is($cardType, $cardNumber) to check if a card is
- * from a specific type and getType($cardNumber) to get the
- * CreditCardTypeConfiguration object that matches the given card number. With
- * this object, you can validate the security code of the card, check the Luhn
- * algorithm or format the card number as the expected pretty format for the
- * card.
- *
- * Additionally, you can use the following methods, which are a shortcut to the
- * "is" method.
- *
  * @method bool isVisa($cardNumber)
  * @method bool isMastercard($cardNumber)
  * @method bool isAmericanExpress($cardNumber)
@@ -44,8 +20,6 @@ use InvalidArgumentException;
  * @method bool isMir($cardNumber)
  * @method bool isHiper($cardNumber)
  * @method bool isHiperCard($cardNumber)
- *
- * @author José Lorente <jose.lorente.martin@gmail.com>
  */
 class CreditCardValidator
 {
@@ -74,9 +48,6 @@ class CreditCardValidator
     public const TYPE_HIPERCARD = 'hipercard';
 
     /**
-     * Map to help magic __call find the correct type for types with special
-     * characters.
-     *
      * @var array<string, string>
      */
     protected array $methodMap = [
@@ -84,14 +55,12 @@ class CreditCardValidator
     ];
 
     /**
-     * Array of credit card configuration objects.
-     *
-     * @var array
+     * @var array<string, CreditCardTypeConfig>
      */
     protected array $typesInfo = [];
 
     /**
-     * @var array
+     * @var list<string>
      */
     protected array $allowedTypes = [];
 
@@ -106,13 +75,16 @@ class CreditCardValidator
     }
 
     /**
-     * CreditCardValidator static constructor.
+     * @param list<string> $allowedTypes
      */
     public static function make(array $allowedTypes = []): static
     {
         return new static($allowedTypes);
     }
 
+    /**
+     * @param list<string> $allowedTypes
+     */
     final public function __construct(array $allowedTypes = [])
     {
         if ($allowedTypes) {
@@ -122,9 +94,6 @@ class CreditCardValidator
         }
     }
 
-    /**
-     * Gets the best CreditCardTypeConfig object that matches the given card number.
-     */
     public function getType(int|string $cardNumber): ?CreditCardTypeConfig
     {
         $candidate = null;
@@ -143,9 +112,6 @@ class CreditCardValidator
         return $candidate;
     }
 
-    /**
-     * Checks if the credit card number is valid.
-     */
     public function isValid(string $cardNumber): bool
     {
         foreach ($this->getTypesInfo() as $config) {
@@ -157,13 +123,6 @@ class CreditCardValidator
         return false;
     }
 
-    /**
-     * Checks if the credit card number is a card of the given type.
-     *
-     * @param string $cardType
-     * @param string $cardNumber
-     * @return bool
-     */
     public function is(string $cardType, string $cardNumber): bool
     {
         $bestMatch = $this->getType($cardNumber);
@@ -172,9 +131,7 @@ class CreditCardValidator
     }
 
     /**
-     * Gets the allowed types list for this object.
-     *
-     * @return array
+     * @return list<string>
      */
     public function getAllowedTypesList(): array
     {
@@ -182,7 +139,7 @@ class CreditCardValidator
     }
 
     /**
-     * Set allowed types list for this CreditCardValidator object.
+     * @param list<string> $types
      */
     public function setAllowedTypesList(array $types): void
     {
@@ -192,43 +149,34 @@ class CreditCardValidator
     /**
      * Gets the credit card typesInfo objects.
      *
-     * @return list<CreditCardTypeConfig>
+     * @return array<string, CreditCardTypeConfig>
      */
     public function getTypesInfo(): array
     {
         return $this->typesInfo;
     }
 
-    /**
-     * Checks if the object has the credit card type configuration.
-     *
-     * @param  string  $cardType
-     * @return bool
-     */
-    public function hasTypeInfo($cardType): bool
+    public function hasTypeInfo(string $cardType): bool
     {
         $typesInfo = $this->getTypesInfo();
 
         return isset($typesInfo[$cardType]);
     }
 
-    /**
-     * Gets the credit card configuration.
-     */
-    public function getTypeInfo(string $cardType): ?CreditCardTypeConfig
+    public function getTypeInfo(string $cardType): CreditCardTypeConfig
     {
         $typesInfo = $this->getTypesInfo();
 
-        return $typesInfo[$cardType] ?? null;
+        return $typesInfo[$cardType];
     }
 
     /**
-     * Magic call support to forward call to is() method.
+     * @param list<mixed> $arguments
      *
-     * @throws InvalidArgumentException
      * @throws BadMethodCallException
+     * @throws InvalidArgumentException
      */
-    public function __call(string $name, array $arguments)
+    public function __call(string $name, array $arguments): bool
     {
         if (str_starts_with($name, 'is')) {
             if (isset($arguments[0]) === false) {
@@ -247,11 +195,9 @@ class CreditCardValidator
         }
     }
 
-    /**
-     * Loads the credit cards typesInfo.
-     */
     protected function loadTypesInfo(): static
     {
+        /** @var array<CreditCardTypeConfig> $typesInfo */
         $typesInfo = [];
         $cardTypesList = CreditCardTypeConfigList::get();
         foreach ($this->getAllowedTypesList() as $card) {

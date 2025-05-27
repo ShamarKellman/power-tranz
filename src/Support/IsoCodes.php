@@ -423,20 +423,14 @@ class IsoCodes
         ['Zloty', '985', 'PLN', '2', 'Zloty', 'Grosz'],
     ];
 
-    /**
-     * Get the Currency Code for a given needle
-     */
-    public static function getCurrencyCode(int|string $needle): ?string
+    public static function getCurrencyCode(string $needle): ?string
     {
         $out = self::search($needle, self::ISO_CURRENCY_CODES);
 
         return is_array($out) ? self::ISO_CURRENCY_CODES[$out[0]][1] : null;
     }
 
-    /**
-     * Get the Country Code for a given needle
-     */
-    public static function getCountryCode(int|string $needle): ?string
+    public static function getCountryCode(string $needle): ?string
     {
         $out = self::search($needle, self::ISO_COUNTRY_CODES);
 
@@ -444,18 +438,16 @@ class IsoCodes
     }
 
     /**
-     * Find row and column of needle in the haystack
+     * @param list<list<string>> $haystack
      *
-     * @param int|string $needle
-     * @param array $haystack
-     * @return array|bool
+     * @return list<int>|bool
      */
-    private static function search(int|string $needle, array $haystack): bool|array
+    private static function search(string $needle, array $haystack): bool|array
     {
         $row = 0;
         foreach ($haystack as $bushel) {
             foreach ($bushel as $col => $value) {
-                if (is_string($value) && is_string($needle) && strcasecmp($value, $needle) === 0) {
+                if (strcasecmp($value, $needle) === 0) {
                     return [$row, $col];
                 } elseif ($value === $needle) {
                     return [$row, $col];

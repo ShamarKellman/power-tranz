@@ -14,6 +14,7 @@
       "imports_order": ["class", "function", "const"],
       "sort_algorithm": "alpha"
     },
-    "no_unused_imports": true
+    "no_unused_imports": true,
+    "phpdoc_align": false
   }
 }

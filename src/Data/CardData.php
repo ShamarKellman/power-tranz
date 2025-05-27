@@ -24,6 +24,9 @@ class CardData
         public readonly ?string $phone = null,
     ) {}
 
+    /**
+     * @return array<string, string|null>
+     */
     public function toArray(): array
     {
         return [

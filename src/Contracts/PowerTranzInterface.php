@@ -6,14 +6,16 @@ namespace Shamarkellman\PowerTranz\Contracts;
 
 use Shamarkellman\PowerTranz\Data\AuthorizationData;
 use Shamarkellman\PowerTranz\Data\CaptureRefundData;
+use Shamarkellman\PowerTranz\Responses\AliveResponse;
 use Shamarkellman\PowerTranz\Responses\Authorize3DSResponse;
 use Shamarkellman\PowerTranz\Responses\GenericResponse;
 use Shamarkellman\PowerTranz\Responses\HostedPageResponse;
 use Shamarkellman\PowerTranz\Responses\PurchaseResponse;
-use Shamarkellman\PowerTranz\Responses\ThreeDSResponse;
 
 interface PowerTranzInterface
 {
+    public function alive(): AliveResponse;
+
     public function authorize(AuthorizationData $transactionData): Authorize3DSResponse;
 
     public function authorizeWithToken(AuthorizationData $transactionData): Authorize3DSResponse;
@@ -21,8 +23,6 @@ interface PowerTranzInterface
     public function authorizeWithSentryToken(AuthorizationData $transactionData): Authorize3DSResponse;
 
     public function getHostedPage(AuthorizationData $transactionData, string $pageSet, string $pageName): HostedPageResponse;
-
-    public function acceptNotification(array $data): ThreeDSResponse;
 
     public function purchase(string $spitoken): PurchaseResponse;
 

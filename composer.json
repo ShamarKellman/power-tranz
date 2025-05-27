@@ -25,7 +25,8 @@
         "laravel/pint": "^1.22",
         "mockery/mockery": "^1.6",
         "pestphp/pest": "^3.8",
-        "phpstan/phpstan": "^2.1"
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-phpunit": "^2.0"
     },
     "config": {
         "sort-packages": true,

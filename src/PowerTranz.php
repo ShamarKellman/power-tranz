@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Shamarkellman\PowerTranz;
 
+use DateTimeImmutable;
 use Exception;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
@@ -15,11 +16,11 @@ use Shamarkellman\PowerTranz\Data\CaptureRefundData;
 use Shamarkellman\PowerTranz\Data\TransactionData;
 use Shamarkellman\PowerTranz\Exceptions\GatewayException;
 use Shamarkellman\PowerTranz\Exceptions\InvalidCreditCard;
+use Shamarkellman\PowerTranz\Responses\AliveResponse;
 use Shamarkellman\PowerTranz\Responses\Authorize3DSResponse;
 use Shamarkellman\PowerTranz\Responses\GenericResponse;
 use Shamarkellman\PowerTranz\Responses\HostedPageResponse;
 use Shamarkellman\PowerTranz\Responses\PurchaseResponse;
-use Shamarkellman\PowerTranz\Responses\ThreeDSResponse;
 
 class PowerTranz implements PowerTranzInterface
 {
@@ -39,6 +40,9 @@ class PowerTranz implements PowerTranzInterface
 
     private bool $checkFraud = false;
 
+    /**
+     * @var array<string, mixed>
+     */
     private array $transactionData = [];
 
     private ?string $orderNumber = null;
@@ -51,19 +55,18 @@ class PowerTranz implements PowerTranzInterface
 
     private ?string $orderNumberPrefix = null;
 
-    public function __construct(private ClientInterface $client) {}
+    public function __construct(private readonly ClientInterface $client) {}
 
     public function getName(): string
     {
         return Support\Constants::DRIVER_NAME;
     }
 
-    /**
-     * Set PowerTranz Id
-     */
-    public function setPowerTranzId(string $id): void
+    public function setPowerTranzId(string $id): self
     {
         $this->powerTranzId = $id;
+
+        return $this;
     }
 
     public function getPowerTranzId(): string
@@ -71,12 +74,11 @@ class PowerTranz implements PowerTranzInterface
         return $this->powerTranzId ?? Support\Constants::CONFIG_KEY_PWTID;
     }
 
-    /**
-     * Set PowerTranz Password
-     */
-    public function setPowerTranzPassword($pwd): void
+    public function setPowerTranzPassword(string $password): self
     {
-        $this->powerTranzPassword = $pwd;
+        $this->powerTranzPassword = $password;
+
+        return $this;
     }
 
     public function getPowerTranzPassword(): string
@@ -84,36 +86,32 @@ class PowerTranz implements PowerTranzInterface
         return $this->powerTranzPassword ?? Support\Constants::CONFIG_KEY_PWTPWD;
     }
 
-    /**
-     * Set PowerTranz Mode
-     */
-    public function setTestMode(bool $mode = false): void
+    public function setTestMode(bool $mode = false): self
     {
         $this->isTestMode = $mode;
+
+        return $this;
     }
 
-    /**
-     * Enable Test Mode
-     */
-    public function enableTestMode(): void
+    public function enableTestMode(): self
     {
         $this->setTestMode(true);
+
+        return $this;
     }
 
-    /**
-     * Set 3DS Mode
-     */
-    public function set3DSMode(bool $mode = true): void
+    public function set3DSMode(bool $mode = true): self
     {
         $this->use3DS = $mode;
+
+        return $this;
     }
 
-    /**
-     * Set Fraud Check Mode
-     */
-    public function setFraudCheckMode(bool $mode = true): void
+    public function setFraudCheckMode(bool $mode = true): self
     {
         $this->checkFraud = $mode;
+
+        return $this;
     }
 
     public function getEndpoint(): string
@@ -121,36 +119,30 @@ class PowerTranz implements PowerTranzInterface
         return ($this->isTestMode) ? Support\Constants::PLATFORM_PWT_UAT : Support\Constants::PLATFORM_PWT_PROD;
     }
 
-    /**
-     * Set Merchant Callback URL
-     */
-    public function setMerchantResponseURL(string $url): void
+    public function setMerchantResponseURL(string $url): self
     {
         $this->merchantResponseURL = $url;
+
+        return $this;
     }
 
-    /**
-     * Get Merchant Callback URL
-     */
     public function getMerchantResponseURL(): string
     {
         return $this->merchantResponseURL ?? Support\Constants::CONFIG_KEY_MERCHANT_RESPONSE_URL;
     }
 
-    /**
-     * Set OrderNumber Auto Generation Mode
-     */
-    public function setOrderNumberAutoGen(bool $auto = false): void
+    public function setOrderNumberAutoGen(bool $auto = false): self
     {
         $this->orderNumberAutoGen = $auto;
+
+        return $this;
     }
 
-    /**
-     * Set Order Number Prefix
-     */
-    public function setOrderNumberPrefix(string $prefix): void
+    public function setOrderNumberPrefix(string $prefix): self
     {
         $this->orderNumberPrefix = $prefix;
+
+        return $this;
     }
 
     public function getOrderNumberPrefix(): string
@@ -158,18 +150,14 @@ class PowerTranz implements PowerTranzInterface
         return $this->orderNumberPrefix ?? Support\Constants::GATEWAY_ORDER_IDENTIFIER_PREFIX;
     }
 
-    /**
-     * Set Order Number
-     */
-    public function setOrderNumber(string $orderNumber): void
+    public function setOrderNumber(string $orderNumber): self
     {
         $this->orderNumber = $orderNumber;
         $this->orderNumberSet = true;
+
+        return $this;
     }
 
-    /**
-     * Get Order Number
-     */
     public function getOrderNumber(): ?string
     {
         if ($this->orderNumberAutoGen && ! $this->orderNumberSet) {
@@ -183,26 +171,21 @@ class PowerTranz implements PowerTranzInterface
         return $this->orderNumber;
     }
 
-    /**
-     * Set Transaction Number Auto Generation Mode
-     */
-    public function setTransactionNumberAutoGen(bool $auto = true): void
+    public function setTransactionNumberAutoGen(bool $auto = true): self
     {
         $this->orderNumberAutoGen = $auto;
+
+        return $this;
     }
 
-    /**
-     * Set Transaction Number
-     */
-    public function setTransactionNumber(string $transactionNumber): void
+    public function setTransactionNumber(string $transactionNumber): self
     {
         $this->transactionNumber = $transactionNumber;
         $this->transactionNumberSet = true;
+
+        return $this;
     }
 
-    /**
-     * Get Transaction Number
-     */
     public function getTransactionNumber(): ?string
     {
         if ($this->transactionNumberAutoGen && ! $this->transactionNumberSet) {
@@ -214,14 +197,22 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * Authorization Request using Full Card Pan
-     *
+     * @throws GatewayException
+     */
+    public function alive(): AliveResponse
+    {
+        $response = $this->send([], 'alive', method: 'GET');
+
+        return new AliveResponse($response);
+    }
+
+    /**
      * @throws InvalidCreditCard
      * @throws GatewayException
      */
     public function authorize(AuthorizationData $transactionData): Authorize3DSResponse
     {
-        $this->validateCreditCard($transactionData->toArray());
+        $this->validateCreditCard($transactionData);
 
         $this->setData($transactionData);
 
@@ -241,8 +232,6 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * Authorization Request using PowerTranz Token
-     *
      * @throws GatewayException
      */
     public function authorizeWithToken(AuthorizationData $transactionData): Authorize3DSResponse
@@ -267,8 +256,6 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * Authorization Request using Sentry Token
-     *
      * @throws GatewayException
      */
     public function authorizeWithSentryToken(AuthorizationData $transactionData): Authorize3DSResponse
@@ -294,7 +281,7 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * Get Hosted Page
+     * @throws GatewayException
      */
     public function getHostedPage(AuthorizationData $transactionData, string $pageSet, string $pageName): HostedPageResponse
     {
@@ -310,16 +297,6 @@ class PowerTranz implements PowerTranzInterface
         return new HostedPageResponse($response);
     }
 
-    public function acceptNotification(array $data): ThreeDSResponse
-    {
-        // to-do
-        // validate data response from callback
-        return new ThreeDSResponse(json_decode($data['Response']));
-    }
-
-    /**
-     * Complete Purchase Transaction
-     */
     public function purchase(string $spitoken): PurchaseResponse
     {
         $response = $this->send("\"{$spitoken}\"", 'spi/payment', 'text/plain');
@@ -328,13 +305,12 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * Tokenize a Card Pan
-     *
      * @throws InvalidCreditCard
+     * @throws GatewayException
      */
     public function tokenize(AuthorizationData $transactionData): GenericResponse
     {
-        $this->validateCreditCard($transactionData->toArray());
+        $this->validateCreditCard($transactionData);
 
         $expiry = sprintf('%02d%02d', (strlen($transactionData->card->expiryYear) == 4) ? substr($transactionData->card->expiryYear, 2, 2) : $transactionData->card->expiryYear, $transactionData->card->expiryMonth);
         $holder = $transactionData->card->name ?? sprintf('%s %s', $transactionData->card->firstName, $transactionData->card->lastName);
@@ -356,7 +332,7 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * Void Transaction
+     * @throws GatewayException
      */
     public function void(string $transactionNumber): GenericResponse
     {
@@ -374,7 +350,7 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * Capture a specific amount of a transaction
+     * @throws GatewayException
      */
     public function capture(CaptureRefundData $transactionData): GenericResponse
     {
@@ -389,7 +365,7 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * Refund Transaction
+     * @throws GatewayException
      */
     public function refund(CaptureRefundData $transactionData): GenericResponse
     {
@@ -405,37 +381,22 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * Validate credit card
-     *
      * @throws InvalidCreditCard
      */
-    private function validateCreditCard(array $data): void
+    private function validateCreditCard(AuthorizationData $data): void
     {
-        if (! isset($data['card'])) {
-            throw new InvalidCreditCard('Credit card data is required.');
-        }
-
-        if (! isset($data['card']['number']) || ! isset($data['card']['expiryMonth']) || ! isset($data['card']['expiryYear']) || ! isset($data['card']['cvv'])) {
-            throw new InvalidCreditCard('Credit card number, expiry month, expiry year, and CVV are required.');
-        }
-
-        $cardValidator = isset($data['validCardType'])
-            ? Support\CreditCardValidator::make($data['validCardType'])
-            : Support\CreditCardValidator::make();
+        $cardValidator = Support\CreditCardValidator::make($data->validCardTypes);
 
         // For test credit card numbers, bypass validation
-        if ($data['card']['number'] === '4242424242424242') {
+        if ($data->card->number === '4242424242424242') {
             return;
         }
 
-        if (! $cardValidator->isValid($data['card']['number'])) {
+        if (! $cardValidator->isValid($data->card->number)) {
             throw new InvalidCreditCard('Invalid Credit Card Number Supplied');
         }
     }
 
-    /**
-     * Set transactionData variable
-     */
     private function setData(TransactionData $data): void
     {
         $this->transactionData = [
@@ -472,18 +433,20 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * HTTP request function using Guzzle
+     * @param array<string, mixed>|string $data
      *
      * @throws GatewayException
      */
-    private function send(array|string $data, string $api, string $accept = 'application/json', string $method = 'POST'): mixed
-    {
+    private function send(
+        array|string $data,
+        string $api,
+        string $accept = 'application/json',
+        string $method = 'POST',
+    ): object {
         $postData = (is_array($data)) ? json_encode($data) : $data;
 
-        // add API Segment iff necessary
         $url = "{$this->getEndpoint()}{$api}";
 
-        // Prepare headers
         $headers = [
             'Accept' => $accept,
             'Content-Type' => 'application/json',
@@ -492,51 +455,41 @@ class PowerTranz implements PowerTranzInterface
             'PowerTranz-PowerTranzPassword' => $this->getPowerTranzPassword(),
         ];
 
-        // Prepare request options
         $options = [
             'headers' => $headers,
         ];
 
-        // Add body for non-GET requests
         if ($method !== 'GET') {
             $options['body'] = $postData;
         }
 
         try {
-            // Execute the request
             $response = $this->client->request($method, $url, $options);
 
-            // Get the response body
             $result = $response->getBody()->getContents();
 
-            // Process the response
             $decoded = urldecode($result);
             $decoded = trim($decoded);
 
-            return json_decode($decoded);
+            /** @var object $json */
+            $json = json_decode($decoded);
+
+            return $json;
         } catch (RequestException $e) {
-            // Handle request exceptions
             $statusCode = $e->hasResponse() ? $e->getResponse()->getStatusCode() : 0;
             $errorMessage = $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : $e->getMessage();
             throw new GatewayException("Gateway Communication error: ({$statusCode}) {$errorMessage}");
         } catch (Exception $e) {
-            // Handle other exceptions
             throw new GatewayException($e->getMessage());
         } catch (GuzzleException $e) {
-            // Handle Guzzle exceptions
             throw new GatewayException($e->getMessage());
         }
     }
 
-    /**
-     * Generate timestamp
-     */
     private function timestamp(): string
     {
-        $utimestamp = microtime(true);
-        $timestamp = floor($utimestamp);
-        $milliseconds = round(($utimestamp - $timestamp) * 1000000);
+        $now = new DateTimeImmutable();
 
-        return date(preg_replace('`(?<!\\\\)u`', $milliseconds, 'YmdHisu'), $timestamp);
+        return $now->format('YmdHisu');
     }
 }

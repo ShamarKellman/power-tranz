@@ -14,6 +14,9 @@ class CaptureRefundData extends TransactionData
         parent::__construct($amount, $currency, transactionNumber: $transactionNumber);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         return array_merge(parent::toArray(), [
