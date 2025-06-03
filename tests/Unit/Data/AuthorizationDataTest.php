@@ -83,11 +83,11 @@ test('AuthorizationData toArray returns correct structure', function () {
         'card',
     ])
     ->and($array['card'])->toHaveKeys([
-        'number',
-        'expiryMonth',
-        'expiryYear',
-        'cvv',
-        'firstName',
-        'lastName',
+        'Number',
+        'ExpiryMonth',
+        'ExpiryYear',
+        'Cvv',
+        'FirstName',
+        'LastName',
     ]);
 });

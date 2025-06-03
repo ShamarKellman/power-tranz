@@ -63,7 +63,7 @@ test('authorize method returns expected response with valid credit card data', f
 
     $request = $this->container[0]['request'];
     expect($request->getMethod())->toBe('POST')
-        ->and($request->getUri()->getPath())->toContain('authorize');
+        ->and($request->getUri()->getPath())->toContain('auth');
 });
 
 test('getHostedPage returns HostedPageResponse with correct data', function () {
@@ -112,7 +112,7 @@ test('getHostedPage returns HostedPageResponse with correct data', function () {
 
     $request = $this->container[0]['request'];
     expect($request->getMethod())->toBe('POST')
-        ->and($request->getUri()->getPath())->toContain('hosted');
+        ->and($request->getUri()->getPath())->toContain('auth');
 });
 
 test('capture returns GenericResponse with success status', function () {

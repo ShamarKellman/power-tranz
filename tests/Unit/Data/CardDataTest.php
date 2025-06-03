@@ -72,20 +72,20 @@ test('CardData toArray returns correct structure', function () {
     $array = $cardData->toArray();
 
     expect($array)->toHaveKeys([
-        'number',
-        'expiryMonth',
-        'expiryYear',
-        'cvv',
-        'name',
-        'firstName',
-        'lastName',
+        'Number',
+        'ExpiryMonth',
+        'ExpiryYear',
+        'Cvv',
+        'Name',
+        'FirstName',
+        'LastName',
         'Address1',
         'Address2',
         'City',
         'State',
         'Postcode',
         'Country',
-        'email',
+        'Email',
         'Phone',
     ]);
 });
