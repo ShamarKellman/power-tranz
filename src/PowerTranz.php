@@ -503,7 +503,7 @@ class PowerTranz implements PowerTranzInterface
 
     private function timestamp(): string
     {
-        $now = new DateTimeImmutable;
+        $now = new DateTimeImmutable();
 
         return $now->format('YmdHisu');
     }
