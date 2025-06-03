@@ -1,5 +1,5 @@
 {
-    "name": "shamarkellman/power_tranz",
+    "name": "shamarkellman/power-tranz",
     "autoload": {
         "psr-4": {
             "Shamarkellman\\PowerTranz\\": "src/"

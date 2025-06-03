@@ -24,7 +24,7 @@ interface PowerTranzInterface
 
     public function getHostedPage(AuthorizationData $transactionData, string $pageSet, string $pageName): HostedPageResponse;
 
-    public function purchase(string $spitoken): PurchaseResponse;
+    public function purchase(string $spiToken): PurchaseResponse;
 
     public function tokenize(AuthorizationData $transactionData): GenericResponse;
 

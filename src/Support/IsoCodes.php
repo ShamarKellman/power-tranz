@@ -276,7 +276,7 @@ class IsoCodes
         ['Baht', '764', 'THB', '2', 'Baht', 'Satang'],
         ['Balboa', '590', 'PAB', '2', 'Balboas', 'Centesimos'],
         ['Bangladeshi Taka', '50', 'BDT', '2', 'Takas', 'Poishas'],
-        ['Barbados Dollar', '52', 'BBD', '2', 'Barbados Dollars', 'Cents'],
+        ['Barbados Dollar', '052', 'BBD', '2', 'Barbados Dollars', 'Cents'],
         ['Belarussian Ruble', '933', 'BYR', '2', 'Belarussian Rubles', 'Kapyeyka'],
         ['Belize Dollar', '84', 'BZD', '2', 'Belize Dollars', 'Cents'],
         ['Bermudian Dollar', '60', 'BMD', '2', 'Bermudan Dollars', 'Cents'],

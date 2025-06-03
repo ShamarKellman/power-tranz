@@ -21,6 +21,7 @@ use Shamarkellman\PowerTranz\Responses\Authorize3DSResponse;
 use Shamarkellman\PowerTranz\Responses\GenericResponse;
 use Shamarkellman\PowerTranz\Responses\HostedPageResponse;
 use Shamarkellman\PowerTranz\Responses\PurchaseResponse;
+use Shamarkellman\PowerTranz\Support\TransactionType;
 
 class PowerTranz implements PowerTranzInterface
 {
@@ -39,6 +40,8 @@ class PowerTranz implements PowerTranzInterface
     private bool $use3DS = true;
 
     private bool $checkFraud = false;
+
+    private bool $includeBillingAddress = false;
 
     /**
      * @var array<string, mixed>
@@ -107,6 +110,13 @@ class PowerTranz implements PowerTranzInterface
         return $this;
     }
 
+    public function setIncludeBillingAddress(bool $include = true): self
+    {
+        $this->includeBillingAddress = $include;
+
+        return $this;
+    }
+
     public function setFraudCheckMode(bool $mode = true): self
     {
         $this->checkFraud = $mode;
@@ -164,6 +174,7 @@ class PowerTranz implements PowerTranzInterface
             $generatedOrderNumber = Uuid::uuid4()->toString();
             $this->setOrderNumber("{$this->getOrderNumberPrefix()}-{$this->timestamp()}-{$generatedOrderNumber}");
         }
+
         if (! $this->orderNumberSet) {
             $this->setOrderNumber("{$this->getOrderNumberPrefix()}-{$this->timestamp()}-{$this->getTransactionNumber()}");
         }
@@ -201,7 +212,7 @@ class PowerTranz implements PowerTranzInterface
      */
     public function alive(): AliveResponse
     {
-        $response = $this->send([], 'alive', method: 'GET');
+        $response = $this->send([], TransactionType::Alive->apiEndpoint(), method: 'GET');
 
         return new AliveResponse($response);
     }
@@ -226,7 +237,7 @@ class PowerTranz implements PowerTranzInterface
             'CardholderName' => $holder,
         ];
 
-        $response = $this->send($this->transactionData, 'authorize');
+        $response = $this->send($this->transactionData, TransactionType::Auth->apiEndpoint());
 
         return new Authorize3DSResponse($response);
     }
@@ -250,7 +261,7 @@ class PowerTranz implements PowerTranzInterface
             'CardholderName' => $holder,
         ];
 
-        $response = $this->send($this->transactionData, 'spi/auth');
+        $response = $this->send($this->transactionData, TransactionType::Auth->apiEndpoint());
 
         return new Authorize3DSResponse($response);
     }
@@ -275,7 +286,7 @@ class PowerTranz implements PowerTranzInterface
             'CardholderName' => $holder,
         ];
 
-        $response = $this->send($this->transactionData, 'spi/auth');
+        $response = $this->send($this->transactionData, TransactionType::Auth->apiEndpoint());
 
         return new Authorize3DSResponse($response);
     }
@@ -283,8 +294,12 @@ class PowerTranz implements PowerTranzInterface
     /**
      * @throws GatewayException
      */
-    public function getHostedPage(AuthorizationData $transactionData, string $pageSet, string $pageName): HostedPageResponse
-    {
+    public function getHostedPage(
+        AuthorizationData $transactionData,
+        string $pageSet,
+        string $pageName,
+        TransactionType $type = TransactionType::Auth,
+    ): HostedPageResponse {
         $this->setData($transactionData);
 
         $this->transactionData['ExtendedData']['HostedPage'] = [
@@ -292,14 +307,14 @@ class PowerTranz implements PowerTranzInterface
             'PageName' => $pageName,
         ];
 
-        $response = $this->send($this->transactionData, 'hosted');
+        $response = $this->send($this->transactionData, $type->apiEndpoint());
 
         return new HostedPageResponse($response);
     }
 
-    public function purchase(string $spitoken): PurchaseResponse
+    public function purchase(string $spiToken): PurchaseResponse
     {
-        $response = $this->send("\"{$spitoken}\"", 'spi/payment', 'text/plain');
+        $response = $this->send("\"{$spiToken}\"", TransactionType::Payment->apiEndpoint(), 'text/plain');
 
         return new PurchaseResponse($response);
     }
@@ -326,7 +341,7 @@ class PowerTranz implements PowerTranzInterface
             'CardholderName' => $holder,
         ];
 
-        $response = $this->send($this->transactionData, 'riskmgmt');
+        $response = $this->send($this->transactionData, TransactionType::RiskManagement->apiEndpoint());
 
         return new GenericResponse($response);
     }
@@ -344,7 +359,7 @@ class PowerTranz implements PowerTranzInterface
             'AutoReversal' => false,
         ];
 
-        $response = $this->send($this->transactionData, 'void');
+        $response = $this->send($this->transactionData, TransactionType::Void->apiEndpoint());
 
         return new GenericResponse($response);
     }
@@ -359,7 +374,7 @@ class PowerTranz implements PowerTranzInterface
             'TotalAmount' => $transactionData->amount,
         ];
 
-        $response = $this->send($this->transactionData, 'capture');
+        $response = $this->send($this->transactionData, TransactionType::Capture->apiEndpoint());
 
         return new GenericResponse($response);
     }
@@ -375,7 +390,7 @@ class PowerTranz implements PowerTranzInterface
             'TotalAmount' => $transactionData->amount,
         ];
 
-        $response = $this->send($this->transactionData, 'refund');
+        $response = $this->send($this->transactionData, TransactionType::Refund->apiEndpoint());
 
         return new GenericResponse($response);
     }
@@ -416,7 +431,7 @@ class PowerTranz implements PowerTranzInterface
             ],
         ];
 
-        if ($data instanceof AuthorizationData) {
+        if ($this->includeBillingAddress) {
             $this->transactionData['BillingAddress'] = [
                 'FirstName' => $data->card->firstName ?? '',
                 'LastName' => $data->card->lastName ?? '',
@@ -425,7 +440,7 @@ class PowerTranz implements PowerTranzInterface
                 'City' => $data->card->city ?? '',
                 'State' => $data->card->state ?? '',
                 'PostalCode' => $data->card->postcode ?? '',
-                'CountryCode' => Support\IsoCodes::getCountryCode($data->card->country) ?? Support\Constants::CONFIG_COUNTRY_CODE,
+                'CountryCode' => Support\IsoCodes::getCountryCode($data->card->country ?? '') ?? Support\Constants::CONFIG_COUNTRY_CODE,
                 'EmailAddress' => $data->card->email ?? '',
                 'PhoneNumber' => $data->card->phone ?? '',
             ];
@@ -488,7 +503,7 @@ class PowerTranz implements PowerTranzInterface
 
     private function timestamp(): string
     {
-        $now = new DateTimeImmutable();
+        $now = new DateTimeImmutable;
 
         return $now->format('YmdHisu');
     }

@@ -11,7 +11,7 @@ class AuthorizationData extends TransactionData
      */
     public function __construct(
         float $amount,
-        public CardData $card,
+        public ?CardData $card = null,
         ?string $currency = null,
         ?bool $addressMatch = false,
         ?string $transactionNumber = null,

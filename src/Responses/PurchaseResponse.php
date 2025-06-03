@@ -16,9 +16,6 @@ class PurchaseResponse extends AbstractResponse
      */
     public function getDataArray(null|string|float $amount = null): array
     {
-        return [
-            'transactionNumber' => $this->transactionData->TransactionIdentifier,
-            'amount' => $amount ?? $this->transactionData->TotalAmount,
-        ];
+        return (array) $this->transactionData;
     }
 }

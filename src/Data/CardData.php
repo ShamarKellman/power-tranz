@@ -7,10 +7,10 @@ namespace Shamarkellman\PowerTranz\Data;
 class CardData
 {
     public function __construct(
-        public readonly string $number,
-        public readonly string $expiryMonth,
-        public readonly string $expiryYear,
-        public readonly string $cvv,
+        public readonly ?string $number = null,
+        public readonly ?string $expiryMonth = null,
+        public readonly ?string $expiryYear = null,
+        public readonly ?string $cvv = null,
         public readonly ?string $name = null,
         public readonly ?string $firstName = null,
         public readonly ?string $lastName = null,
@@ -30,20 +30,20 @@ class CardData
     public function toArray(): array
     {
         return [
-            'number' => $this->number,
-            'expiryMonth' => $this->expiryMonth,
-            'expiryYear' => $this->expiryYear,
-            'cvv' => $this->cvv,
-            'name' => $this->name,
-            'firstName' => $this->firstName,
-            'lastName' => $this->lastName,
+            'Number' => $this->number,
+            'ExpiryMonth' => $this->expiryMonth,
+            'ExpiryYear' => $this->expiryYear,
+            'Cvv' => $this->cvv,
+            'Name' => $this->name,
+            'FirstName' => $this->firstName,
+            'LastName' => $this->lastName,
             'Address1' => $this->address1,
             'Address2' => $this->address2,
             'City' => $this->city,
             'State' => $this->state,
             'Postcode' => $this->postcode,
             'Country' => $this->country,
-            'email' => $this->email,
+            'Email' => $this->email,
             'Phone' => $this->phone,
         ];
     }
