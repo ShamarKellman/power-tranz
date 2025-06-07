@@ -1,0 +1,37 @@
+name: PHPStan
+
+on:
+  push:
+    paths:
+      - '**.php'
+      - 'phpstan.neon'
+      - '.github/workflows/phpstan.yml'
+
+jobs:
+  phpstan:
+    name: phpstan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-cache-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            composer-cache-
+
+      - uses: actions/checkout@v4
+      - name: Install Dependencies
+        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+      - name: Run PHPStan
+        run: ./vendor/bin/phpstan --memory-limit=1G --error-format=github

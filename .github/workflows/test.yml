@@ -1,0 +1,30 @@
+name: run-tests
+
+on: ['push', 'pull_request']
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer
+          coverage: xdebug
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-cache-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            composer-cache-
+
+      - uses: actions/checkout@v4
+      - name: Install Dependencies
+        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+      - name: Execute tests via Pest
+        run: vendor/bin/pest --ci

@@ -9,6 +9,8 @@ test('PurchaseResponse can be constructed and returns data', function () {
     $response = new PurchaseResponse($data);
 
     $object = $response->getData();
+
     expect($object)->toBeInstanceOf(stdClass::class);
+    /** @phpstan-ignore-next-line  */
     expect($object->foo)->toBe('bar');
 });
