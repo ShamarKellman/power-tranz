@@ -431,7 +431,7 @@ class PowerTranz implements PowerTranzInterface
             ],
         ];
 
-        if ($this->includeBillingAddress) {
+        if ($this->includeBillingAddress || ! empty($data->card)) {
             $this->transactionData['BillingAddress'] = [
                 'FirstName' => $data->card->firstName ?? '',
                 'LastName' => $data->card->lastName ?? '',

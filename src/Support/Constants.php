@@ -32,7 +32,7 @@ class Constants
 
     public const CONFIG_BILLING_STATE_CODE = 'MB';
 
-    public const CONFIG_CURRENCY_CODE = '780';
+    public const CONFIG_CURRENCY_CODE = '052';
 
-    public const CONFIG_COUNTRY_CODE = '780';
+    public const CONFIG_COUNTRY_CODE = '052';
 }
