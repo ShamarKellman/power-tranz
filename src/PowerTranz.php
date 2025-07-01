@@ -446,12 +446,14 @@ class PowerTranz implements PowerTranzInterface
         string $accept = 'application/json',
         string $method = 'POST',
     ): object {
+        $postData = (is_array($data)) ? json_encode($data) : $data;
+
         $url = "{$this->getEndpoint()}{$api}";
 
         $headers = [
             'Accept' => $accept,
             'Content-Type' => 'application/json',
-            'Content-Length' => strlen(json_encode($data)),
+            'Content-Length' => strlen($postData),
             'PowerTranz-PowerTranzId' => $this->getPowerTranzId(),
             'PowerTranz-PowerTranzPassword' => $this->getPowerTranzPassword(),
         ];
@@ -459,7 +461,7 @@ class PowerTranz implements PowerTranzInterface
         $options = [];
 
         if ($method !== 'GET') {
-            $options['json'] = $data;
+            $options['body'] = $postData;
         }
 
         return Http::withHeaders($headers)->send($method, $url, $options)->throw()->json();
