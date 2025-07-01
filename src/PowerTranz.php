@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace Shamarkellman\PowerTranz;
 
 use DateTimeImmutable;
-use Exception;
-use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Exception\RequestException;
+use Illuminate\Support\Facades\Http;
 use Ramsey\Uuid\Uuid;
 use Shamarkellman\PowerTranz\Contracts\PowerTranzInterface;
 use Shamarkellman\PowerTranz\Data\AuthorizationData;
@@ -25,11 +22,11 @@ use Shamarkellman\PowerTranz\Support\TransactionType;
 
 class PowerTranz implements PowerTranzInterface
 {
+    private string $endpoint = 'https://staging.ptranz.com/api/';
+
     private ?string $powerTranzId = null;
 
     private ?string $powerTranzPassword = null;
-
-    private bool $isTestMode = false;
 
     private ?string $merchantResponseURL = null;
 
@@ -58,11 +55,21 @@ class PowerTranz implements PowerTranzInterface
 
     private ?string $orderNumberPrefix = null;
 
-    public function __construct(private readonly ClientInterface $client) {}
-
     public function getName(): string
     {
         return Support\Constants::DRIVER_NAME;
+    }
+
+    public function setEndPoint(string $endpoint): self
+    {
+        $this->endpoint = $endpoint;
+
+        return $this;
+    }
+
+    public function getEndpoint(): string
+    {
+        return $this->endpoint;
     }
 
     public function setPowerTranzId(string $id): self
@@ -89,20 +96,6 @@ class PowerTranz implements PowerTranzInterface
         return $this->powerTranzPassword ?? Support\Constants::CONFIG_KEY_PWTPWD;
     }
 
-    public function setTestMode(bool $mode = false): self
-    {
-        $this->isTestMode = $mode;
-
-        return $this;
-    }
-
-    public function enableTestMode(): self
-    {
-        $this->setTestMode(true);
-
-        return $this;
-    }
-
     public function set3DSMode(bool $mode = true): self
     {
         $this->use3DS = $mode;
@@ -122,11 +115,6 @@ class PowerTranz implements PowerTranzInterface
         $this->checkFraud = $mode;
 
         return $this;
-    }
-
-    public function getEndpoint(): string
-    {
-        return ($this->isTestMode) ? Support\Constants::PLATFORM_PWT_UAT : Support\Constants::PLATFORM_PWT_PROD;
     }
 
     public function setMerchantResponseURL(string $url): self
@@ -458,52 +446,28 @@ class PowerTranz implements PowerTranzInterface
         string $accept = 'application/json',
         string $method = 'POST',
     ): object {
-        $postData = (is_array($data)) ? json_encode($data) : $data;
-
         $url = "{$this->getEndpoint()}{$api}";
 
         $headers = [
             'Accept' => $accept,
             'Content-Type' => 'application/json',
-            'Content-Length' => strlen($postData),
+            'Content-Length' => strlen(json_encode($data)),
             'PowerTranz-PowerTranzId' => $this->getPowerTranzId(),
             'PowerTranz-PowerTranzPassword' => $this->getPowerTranzPassword(),
         ];
 
-        $options = [
-            'headers' => $headers,
-        ];
+        $options = [];
 
         if ($method !== 'GET') {
-            $options['body'] = $postData;
+            $options['json'] = $data;
         }
 
-        try {
-            $response = $this->client->request($method, $url, $options);
-
-            $result = $response->getBody()->getContents();
-
-            $decoded = urldecode($result);
-            $decoded = trim($decoded);
-
-            /** @var object $json */
-            $json = json_decode($decoded);
-
-            return $json;
-        } catch (RequestException $e) {
-            $statusCode = $e->hasResponse() ? $e->getResponse()->getStatusCode() : 0;
-            $errorMessage = $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : $e->getMessage();
-            throw new GatewayException("Gateway Communication error: ({$statusCode}) {$errorMessage}");
-        } catch (Exception $e) {
-            throw new GatewayException($e->getMessage());
-        } catch (GuzzleException $e) {
-            throw new GatewayException($e->getMessage());
-        }
+        return Http::withHeaders($headers)->send($method, $url, $options)->throw()->json();
     }
 
     private function timestamp(): string
     {
-        $now = new DateTimeImmutable();
+        $now = new DateTimeImmutable;
 
         return $now->format('YmdHisu');
     }
