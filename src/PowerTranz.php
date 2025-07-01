@@ -464,7 +464,7 @@ class PowerTranz implements PowerTranzInterface
             $options['body'] = $postData;
         }
 
-        return Http::withHeaders($headers)->send($method, $url, $options)->throw()->json();
+        return Http::withHeaders($headers)->send($method, $url, $options)->throw()->object();
     }
 
     private function timestamp(): string
