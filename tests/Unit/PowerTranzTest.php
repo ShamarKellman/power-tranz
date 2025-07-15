@@ -2,39 +2,23 @@
 
 declare(strict_types=1);
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
+use Illuminate\Http\Client\Factory;
 use Shamarkellman\PowerTranz\PowerTranz;
+use Shamarkellman\PowerTranz\Support\Constants;
 
 test('getEndpoint returns correct URL in test mode', function () {
-    $mockHandler = new MockHandler();
-    $handlerStack = HandlerStack::create($mockHandler);
-    $client = new Client(['handler' => $handlerStack]);
+    /** @var \PHPUnit\Framework\MockObject\MockObject|Factory $factory */
+    $factory = mock(Factory::class);
 
-    $powerTranz = new PowerTranz($client);
-    $powerTranz->enableTestMode();
-    expect($powerTranz->getEndpoint())->toBe(\Shamarkellman\PowerTranz\Support\Constants::PLATFORM_PWT_UAT);
+    $powerTranz = new PowerTranz($factory);
+    expect($powerTranz->getEndpoint())->toBe(Constants::PLATFORM_PWT_UAT);
 });
 
 test('getEndpoint returns correct URL in production mode', function () {
-    $mockHandler = new MockHandler();
-    $handlerStack = HandlerStack::create($mockHandler);
-    $client = new Client(['handler' => $handlerStack]);
+    /** @var \PHPUnit\Framework\MockObject\MockObject|Factory $factory */
+    $factory = mock(Factory::class);
 
-    $powerTranz = new PowerTranz($client);
-    $powerTranz->setTestMode(false);
-    expect($powerTranz->getEndpoint())->toBe(\Shamarkellman\PowerTranz\Support\Constants::PLATFORM_PWT_PROD);
-});
-
-test('setTestMode correctly sets the test mode', function () {
-    $mockHandler = new MockHandler();
-    $handlerStack = HandlerStack::create($mockHandler);
-    $client = new Client(['handler' => $handlerStack]);
-
-    $powerTranz = new PowerTranz($client);
-    $powerTranz->setTestMode(true);
-    expect($powerTranz->getEndpoint())->toBe(\Shamarkellman\PowerTranz\Support\Constants::PLATFORM_PWT_UAT);
-    $powerTranz->setTestMode(false);
-    expect($powerTranz->getEndpoint())->toBe(\Shamarkellman\PowerTranz\Support\Constants::PLATFORM_PWT_PROD);
+    $powerTranz = new PowerTranz($factory);
+    $powerTranz->setEndPoint(Constants::PLATFORM_PWT_PROD);
+    expect($powerTranz->getEndpoint())->toBe(Constants::PLATFORM_PWT_PROD);
 });

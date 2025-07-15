@@ -2,11 +2,7 @@
 
 declare(strict_types=1);
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Middleware;
-use GuzzleHttp\Psr7\Response;
+use Illuminate\Http\Client\Factory;
 use Shamarkellman\PowerTranz\Data\AuthorizationData;
 use Shamarkellman\PowerTranz\Data\CaptureRefundData;
 use Shamarkellman\PowerTranz\Data\CardData;
@@ -17,28 +13,47 @@ use Shamarkellman\PowerTranz\Responses\HostedPageResponse;
 use Shamarkellman\PowerTranz\Support\CreditCardValidator;
 
 beforeEach(function () {
-    $this->container = [];
-    $this->history = Middleware::history($this->container);
-    $this->mock = new MockHandler();
-    $this->handlerStack = HandlerStack::create($this->mock);
-    $this->handlerStack->push($this->history);
-    $this->client = new Client(['handler' => $this->handlerStack]);
+    $this->responseData = null;
+    $this->factory = mock(Factory::class);
+    $this->pendingRequest = mock();
 
+    $this->factory->shouldReceive('withHeaders')
+        ->andReturn($this->pendingRequest);
+
+    // @phpstan-ignore-next-line
+    $this->pendingRequest->shouldReceive('send')
+        ->andReturnUsing(function ($method, $url, $options) {
+            $this->lastRequest = [
+                'method' => $method,
+                'url' => $url,
+                'options' => $options,
+            ];
+
+            return $this->pendingRequest;
+        });
+
+    $this->pendingRequest->shouldReceive('throw')
+        ->andReturn($this->pendingRequest);
+    // @phpstan-ignore-next-line
+    $this->pendingRequest->shouldReceive('object')
+        ->andReturnUsing(function () {
+            return json_decode(json_encode($this->responseData));
+        });
 });
 
 test('authorize method returns expected response with valid credit card data', function () {
-    $this->mock->append(new Response(200, [], json_encode([
+    $this->responseData = [
         'TransactionIdentifier' => 'test-transaction-id',
         'TransactionStatus' => 'Approved',
         'TransactionNumber' => '123456',
         'ResponseCode' => '00',
         'ResponseMessage' => 'Success',
-    ])));
+    ];
 
-    $powerTranz = new PowerTranz($this->client);
+    $powerTranz = new PowerTranz($this->factory);
     $powerTranz->setPowerTranzId('test_id');
     $powerTranz->setPowerTranzPassword('test_password');
-    $powerTranz->enableTestMode();
+    $powerTranz->setEndPoint(\Shamarkellman\PowerTranz\Support\Constants::PLATFORM_PWT_UAT);
 
     $card = new CardData(
         '4242424242424242',
@@ -61,22 +76,21 @@ test('authorize method returns expected response with valid credit card data', f
     expect($response)->toBeInstanceOf(Authorize3DSResponse::class)
         ->and($response->getTransactionNumber())->toBe('test-transaction-id');
 
-    $request = $this->container[0]['request'];
-    expect($request->getMethod())->toBe('POST')
-        ->and($request->getUri()->getPath())->toContain('auth');
+    expect($this->lastRequest['method'])->toBe('POST')
+        ->and($this->lastRequest['url'])->toContain('auth');
 });
 
 test('getHostedPage returns HostedPageResponse with correct data', function () {
-    $this->mock->append(new Response(200, [], json_encode([
+    $this->responseData = [
         'RedirectData' => 'https://test.powerTranz.com/pay',
         'TransactionIdentifier' => 'test-transaction-id',
         'TransactionStatus' => 'Redirect',
         'ResponseCode' => '00',
         'ResponseMessage' => 'Success',
-    ])));
+    ];
 
-    $powerTranz = new PowerTranz($this->client);
-    $powerTranz->enableTestMode();
+    $powerTranz = new PowerTranz($this->factory);
+    $powerTranz->setEndPoint(\Shamarkellman\PowerTranz\Support\Constants::PLATFORM_PWT_UAT);
     $powerTranz->setPowerTranzId('test-id');
     $powerTranz->setPowerTranzPassword('test-password');
     $powerTranz->setMerchantResponseURL('https://example.com/callback');
@@ -110,21 +124,20 @@ test('getHostedPage returns HostedPageResponse with correct data', function () {
         ->and($response->isRedirect())->toBeTrue()
         ->and($response->redirect())->toBe('https://test.powerTranz.com/pay');
 
-    $request = $this->container[0]['request'];
-    expect($request->getMethod())->toBe('POST')
-        ->and($request->getUri()->getPath())->toContain('auth');
+    expect($this->lastRequest['method'])->toBe('POST')
+        ->and($this->lastRequest['url'])->toContain('auth');
 });
 
 test('capture returns GenericResponse with success status', function () {
-    $this->mock->append(new Response(200, [], json_encode([
+    $this->responseData = [
         'TransactionIdentifier' => 'test-transaction-id',
         'TransactionStatus' => 'Approved',
         'IsoResponseCode' => '00',
         'ResponseMessage' => 'Success',
-    ])));
+    ];
 
-    $powerTranz = new PowerTranz($this->client);
-    $powerTranz->enableTestMode();
+    $powerTranz = new PowerTranz($this->factory);
+    $powerTranz->setEndPoint(\Shamarkellman\PowerTranz\Support\Constants::PLATFORM_PWT_UAT);
     $powerTranz->setPowerTranzId('test-id');
     $powerTranz->setPowerTranzPassword('test-password');
 
@@ -140,21 +153,20 @@ test('capture returns GenericResponse with success status', function () {
         ->and($response->isSuccessful())->toBeTrue()
         ->and($response->getTransactionNumber())->toBe('test-transaction-id');
 
-    $request = $this->container[0]['request'];
-    expect($request->getMethod())->toBe('POST')
-        ->and($request->getUri()->getPath())->toContain('capture');
+    expect($this->lastRequest['method'])->toBe('POST')
+        ->and($this->lastRequest['url'])->toContain('capture');
 });
 
 test('refund returns GenericResponse with success status', function () {
-    $this->mock->append(new Response(200, [], json_encode([
+    $this->responseData = [
         'TransactionIdentifier' => 'test-transaction-id',
         'TransactionStatus' => 'Approved',
         'IsoResponseCode' => '00',
         'ResponseMessage' => 'Success',
-    ])));
+    ];
 
-    $powerTranz = new PowerTranz($this->client);
-    $powerTranz->enableTestMode();
+    $powerTranz = new PowerTranz($this->factory);
+    $powerTranz->setEndPoint(\Shamarkellman\PowerTranz\Support\Constants::PLATFORM_PWT_UAT);
     $powerTranz->setPowerTranzId('test-id');
     $powerTranz->setPowerTranzPassword('test-password');
 
@@ -170,22 +182,21 @@ test('refund returns GenericResponse with success status', function () {
         ->and($response->isSuccessful())->toBeTrue()
         ->and($response->getTransactionNumber())->toBe('test-transaction-id');
 
-    $request = $this->container[0]['request'];
-    expect($request->getMethod())->toBe('POST')
-        ->and($request->getUri()->getPath())->toContain('refund');
+    expect($this->lastRequest['method'])->toBe('POST')
+        ->and($this->lastRequest['url'])->toContain('refund');
 });
 
 test('capture with invalid transaction number returns error response', function () {
-    $this->mock->append(new Response(200, [], json_encode([
+    $this->responseData = [
         'TransactionIdentifier' => 'test-transaction-id',
         'TransactionStatus' => 'Failed',
         'IsoResponseCode' => '01',
         'ResponseMessage' => 'Invalid Transaction',
         'Errors' => ['Code' => '01', 'Message' => 'Transaction not found'],
-    ])));
+    ];
 
-    $powerTranz = new PowerTranz($this->client);
-    $powerTranz->enableTestMode();
+    $powerTranz = new PowerTranz($this->factory);
+    $powerTranz->setEndPoint(\Shamarkellman\PowerTranz\Support\Constants::PLATFORM_PWT_UAT);
     $powerTranz->setPowerTranzId('test-id');
     $powerTranz->setPowerTranzPassword('test-password');
 
@@ -201,22 +212,21 @@ test('capture with invalid transaction number returns error response', function 
         ->and($response->isSuccessful())->toBeFalse()
         ->and($response->getErrorMessages())->toContain('Transaction not found');
 
-    $request = $this->container[0]['request'];
-    expect($request->getMethod())->toBe('POST')
-        ->and($request->getUri()->getPath())->toContain('capture');
+    expect($this->lastRequest['method'])->toBe('POST')
+        ->and($this->lastRequest['url'])->toContain('capture');
 })->skip('flaky test, needs investigation');
 
 test('refund with invalid transaction number returns error response', function () {
-    $this->mock->append(new Response(200, [], json_encode([
+    $this->responseData = [
         'TransactionIdentifier' => 'invalid-transaction',
         'TransactionStatus' => 'Failed',
         'IsoResponseCode' => '01',
         'ResponseMessage' => 'Invalid Transaction',
         'Errors' => ['Code' => '01', 'Message' => 'Transaction not found'],
-    ])));
+    ];
 
-    $powerTranz = new PowerTranz($this->client);
-    $powerTranz->enableTestMode();
+    $powerTranz = new PowerTranz($this->factory);
+    $powerTranz->setEndPoint(\Shamarkellman\PowerTranz\Support\Constants::PLATFORM_PWT_UAT);
     $powerTranz->setPowerTranzId('test-id');
     $powerTranz->setPowerTranzPassword('test-password');
 
@@ -232,20 +242,19 @@ test('refund with invalid transaction number returns error response', function (
         ->and($response->isSuccessful())->toBeFalse()
         ->and($response->getErrorMessages())->toContain('Transaction not found');
 
-    $request = $this->container[0]['request'];
-    expect($request->getMethod())->toBe('POST')
-        ->and($request->getUri()->getPath())->toContain('refund');
+    expect($this->lastRequest['method'])->toBe('POST')
+        ->and($this->lastRequest['url'])->toContain('refund');
 })->skip('flaky test, needs investigation');
 
 test('alive endpoint returns AliveResponse with success', function () {
-    $this->mock->append(new Response(200, [], json_encode([
+    $this->responseData = [
         'Name' => 'PowerTranz',
         'Version' => '2.8',
         'Status' => 'OK',
-    ])));
+    ];
 
-    $powerTranz = new PowerTranz($this->client);
-    $powerTranz->enableTestMode();
+    $powerTranz = new PowerTranz($this->factory);
+    $powerTranz->setEndPoint(\Shamarkellman\PowerTranz\Support\Constants::PLATFORM_PWT_UAT);
     $powerTranz->setPowerTranzId('test-id');
     $powerTranz->setPowerTranzPassword('test-password');
 
@@ -254,7 +263,6 @@ test('alive endpoint returns AliveResponse with success', function () {
     expect($response)->toBeInstanceOf(\Shamarkellman\PowerTranz\Responses\AliveResponse::class)
         ->and($response->isSuccessful())->toBeTrue();
 
-    $request = $this->container[0]['request'];
-    expect($request->getMethod())->toBe('GET')
-        ->and($request->getUri()->getPath())->toContain('alive');
+    expect($this->lastRequest['method'])->toBe('GET')
+        ->and($this->lastRequest['url'])->toContain('alive');
 });
