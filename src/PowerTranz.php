@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Shamarkellman\PowerTranz;
 
 use DateTimeImmutable;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Factory;
+use Illuminate\Http\Client\RequestException;
 use Ramsey\Uuid\Uuid;
 use Shamarkellman\PowerTranz\Contracts\PowerTranzInterface;
 use Shamarkellman\PowerTranz\Data\AuthorizationData;
 use Shamarkellman\PowerTranz\Data\CaptureRefundData;
 use Shamarkellman\PowerTranz\Data\TransactionData;
-use Shamarkellman\PowerTranz\Exceptions\GatewayException;
 use Shamarkellman\PowerTranz\Exceptions\InvalidCreditCard;
 use Shamarkellman\PowerTranz\Responses\AliveResponse;
 use Shamarkellman\PowerTranz\Responses\Authorize3DSResponse;
@@ -54,6 +55,8 @@ class PowerTranz implements PowerTranzInterface
     private bool $transactionNumberSet = false;
 
     private ?string $orderNumberPrefix = null;
+
+    public function __construct(private Factory $client) {}
 
     public function getName(): string
     {
@@ -196,7 +199,8 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * @throws GatewayException
+     * @throws ConnectionException
+     * @throws RequestException
      */
     public function alive(): AliveResponse
     {
@@ -207,7 +211,9 @@ class PowerTranz implements PowerTranzInterface
 
     /**
      * @throws InvalidCreditCard
-     * @throws GatewayException
+     * @throws ConnectionException
+     * @throws RequestException
+     *
      */
     public function authorize(AuthorizationData $transactionData): Authorize3DSResponse
     {
@@ -231,7 +237,8 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * @throws GatewayException
+     * @throws ConnectionException
+     * @throws RequestException
      */
     public function authorizeWithToken(AuthorizationData $transactionData): Authorize3DSResponse
     {
@@ -255,7 +262,8 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * @throws GatewayException
+     * @throws ConnectionException
+     * @throws RequestException
      */
     public function authorizeWithSentryToken(AuthorizationData $transactionData): Authorize3DSResponse
     {
@@ -280,7 +288,8 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * @throws GatewayException
+     * @throws ConnectionException
+     * @throws RequestException
      */
     public function getHostedPage(
         AuthorizationData $transactionData,
@@ -308,8 +317,9 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
+     * @throws ConnectionException
      * @throws InvalidCreditCard
-     * @throws GatewayException
+     * @throws RequestException
      */
     public function tokenize(AuthorizationData $transactionData): GenericResponse
     {
@@ -335,7 +345,8 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * @throws GatewayException
+     * @throws ConnectionException
+     * @throws RequestException
      */
     public function void(string $transactionNumber): GenericResponse
     {
@@ -353,7 +364,8 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * @throws GatewayException
+     * @throws ConnectionException
+     * @throws RequestException
      */
     public function capture(CaptureRefundData $transactionData): GenericResponse
     {
@@ -368,7 +380,8 @@ class PowerTranz implements PowerTranzInterface
     }
 
     /**
-     * @throws GatewayException
+     * @throws ConnectionException
+     * @throws RequestException
      */
     public function refund(CaptureRefundData $transactionData): GenericResponse
     {
@@ -438,7 +451,8 @@ class PowerTranz implements PowerTranzInterface
     /**
      * @param array<string, mixed>|string $data
      *
-     * @throws GatewayException
+     * @throws ConnectionException
+     * @throws RequestException
      */
     private function send(
         array|string $data,
@@ -464,12 +478,15 @@ class PowerTranz implements PowerTranzInterface
             $options['body'] = $postData;
         }
 
-        return Http::withHeaders($headers)->send($method, $url, $options)->throw()->object();
+        return $this->client->withHeaders($headers)
+            ->send($method, $url, $options)
+            ->throw()
+            ->object();
     }
 
     private function timestamp(): string
     {
-        $now = new DateTimeImmutable();
+        $now = new DateTimeImmutable;
 
         return $now->format('YmdHisu');
     }
